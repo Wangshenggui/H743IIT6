@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "system.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -91,7 +91,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-
+	// 自动初始化
+	auto_initcalls();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -101,9 +102,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  HAL_GPIO_TogglePin(led_green_GPIO_Port, led_green_Pin);
-	  HAL_GPIO_TogglePin(led_red_GPIO_Port, led_red_Pin);
-	  HAL_Delay(100);
+		uint32_t tick = HAL_GetTick();
+		
+		LED_FSM_SetBlinkEvent(led_green_fsm, 100, 500);
+		LED_FSM_SetBlinkEvent(led_red_fsm,		500, 100);
+		LED_FSM_Run(led_green_fsm,	tick);
+		LED_FSM_Run(led_red_fsm,		tick);
   }
   /* USER CODE END 3 */
 }
