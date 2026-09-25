@@ -418,6 +418,13 @@
         </Group>
         <Group>
           <GroupName>APP</GroupName>
+          <Files>
+            <File>
+              <FileName>key_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\USER\APP\src\key_control.c</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>MID</GroupName>
@@ -426,6 +433,11 @@
               <FileName>led_fsm.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\USER\Middleware\src\led_fsm.c</FilePath>
+            </File>
+            <File>
+              <FileName>key_fsm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\USER\Middleware\src\key_fsm.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -436,6 +448,11 @@
               <FileName>led.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\USER\BSP\src\led.c</FilePath>
+            </File>
+            <File>
+              <FileName>key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\USER\BSP\src\key.c</FilePath>
             </File>
           </Files>
         </Group>

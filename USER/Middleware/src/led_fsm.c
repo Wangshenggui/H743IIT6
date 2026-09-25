@@ -40,11 +40,9 @@ void mid_led_fsm_init()
 	// 初始化RED
 	cfg.id = LED_RED;
 	led_red_fsm		= LED_FSM_Init(&cfg);
-	assert_param(led_red_fsm != NULL);
 
 	// 初始设置关闭LED
 	LED_FSM_SetOFFEvent(led_green_fsm);
-	LED_FSM_SetOFFEvent(led_red_fsm);
 }
 INIT_MID(mid_led_fsm_init);
 

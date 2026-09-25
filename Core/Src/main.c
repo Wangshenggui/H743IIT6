@@ -91,7 +91,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-	// 自动初始化
+	// 娈垫敹闆嗚嚜鍔ㄥ垵濮嬪寲
 	auto_initcalls();
   /* USER CODE END 2 */
 
@@ -104,10 +104,12 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		uint32_t tick = HAL_GetTick();
 		
-		LED_FSM_SetBlinkEvent(led_green_fsm, 100, 500);
-		LED_FSM_SetBlinkEvent(led_red_fsm,		500, 100);
+		// led鐘舵�佹満
 		LED_FSM_Run(led_green_fsm,	tick);
 		LED_FSM_Run(led_red_fsm,		tick);
+		
+		// key鐘舵�佹満
+		app_key_fsm_run(tick);
   }
   /* USER CODE END 3 */
 }

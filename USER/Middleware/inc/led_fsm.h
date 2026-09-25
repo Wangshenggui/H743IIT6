@@ -5,7 +5,7 @@
 #include "led.h"
 
 /*最大LED状态机数量(用于静态内存池分配)*/
-#define LED_FSM_MAX_NUM 1
+#define LED_FSM_MAX_NUM 2
 
 /*LED FSM状态枚举*/
 typedef enum
