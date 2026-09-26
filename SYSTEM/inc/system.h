@@ -29,6 +29,8 @@
 /*************Utils头文件加载************/
 #include "utils_time.h"
 /**************************************/
+/*使能CPU的L1-Cache*/
+void Cache_Enable(void);
 
 // 调试使能
 #define DEBUG_ENABLE

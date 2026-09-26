@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "gpio.h"
+#include "fmc.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -55,7 +56,39 @@ static void MPU_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+// 外部SDRAM数组
+uint8_t testsram[32 * 1024 * 1024] __attribute__((at(0x60000000)));
 
+#define MAX_SIZE     (32 * 1024 * 1024)   // 假设最大 32MB
+#define STEP         (1 * 1024 * 1024)    // 每 1MB 测一次
+uint32_t sdram_detect_size(void)
+{
+	volatile uint32_t *p;
+	uint32_t size = 0;
+
+	// 第一步：在每个 1MB 边界写入自己的地址
+	for (uint32_t offset = 0; offset < MAX_SIZE; offset += STEP) {
+			p = (volatile uint32_t *)(SDRAM_BASE_ADDR + offset);
+			*p = SDRAM_BASE_ADDR + offset;   // 写入该地址本身
+	}
+
+	// 第二步：读回，找到第一个“回绕”的地址
+	for (uint32_t offset = 0; offset < MAX_SIZE; offset += STEP)
+	{
+		p = (volatile uint32_t *)(SDRAM_BASE_ADDR + offset);
+		uint32_t readback = *p;
+		uint32_t expected = SDRAM_BASE_ADDR + offset;
+
+		if (readback != expected) {
+				// 读回的不是自己，说明这个地址已经超出真实容量
+				size = offset;
+				break;
+		}
+	}
+
+	if (size == 0) size = MAX_SIZE;
+	return size;
+}
 /* USER CODE END 0 */
 
 /**
@@ -66,11 +99,19 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+	
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
   MPU_Config();
+
+  /* Enable the CPU Cache */
+
+  /* Enable I-Cache---------------------------------------------------------*/
+  SCB_EnableICache();
+
+  /* Enable D-Cache---------------------------------------------------------*/
+  SCB_EnableDCache();
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -78,7 +119,8 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+	// 开启CPU一级缓存
+	Cache_Enable();
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -90,9 +132,13 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_FMC_Init();
   /* USER CODE BEGIN 2 */
 	// 段收集自动初始化
 	auto_initcalls();
+	
+	static uint32_t sdram_size = 0;
+	sdram_size = sdram_detect_size();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -189,15 +235,35 @@ void MPU_Config(void)
   */
   MPU_InitStruct.Enable = MPU_REGION_ENABLE;
   MPU_InitStruct.Number = MPU_REGION_NUMBER0;
-  MPU_InitStruct.BaseAddress = 0x0;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_4GB;
-  MPU_InitStruct.SubRegionDisable = 0x87;
+  MPU_InitStruct.BaseAddress = 0x20000000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_128KB;
+  MPU_InitStruct.SubRegionDisable = 0x0;
   MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
-  MPU_InitStruct.AccessPermission = MPU_REGION_NO_ACCESS;
-  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+  MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+  MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
+  MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
+
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  /** Initializes and configures the Region and the memory to be protected
+  */
+  MPU_InitStruct.Number = MPU_REGION_NUMBER1;
+  MPU_InitStruct.BaseAddress = 0x24000000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_512KB;
   MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  /** Initializes and configures the Region and the memory to be protected
+  */
+  MPU_InitStruct.Number = MPU_REGION_NUMBER2;
+  MPU_InitStruct.BaseAddress = 0x60000000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_32MB;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+  MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
   /* Enables the MPU */
