@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma2d.h"
 #include "ltdc.h"
 #include "gpio.h"
 #include "fmc.h"
@@ -57,7 +58,43 @@ static void MPU_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+// 帧缓冲 0 和帧缓冲 1，各 768KB
+uint16_t frame_buf_0[480 * 800] __attribute__((at(0x60000000)));
+uint16_t frame_buf_1[480 * 800] __attribute__((at(0x600C0000)));  // 偏移 0xC0000
 
+// 记录当前“后台”缓冲（用于绘制）
+static uint16_t *back_buf = frame_buf_0;
+static uint16_t *front_buf = frame_buf_1;  // LTDC 当前正在显示的
+
+static void dma2d_fill(uint16_t color)
+{
+	while (DMA2D->CR & DMA2D_CR_START);
+	DMA2D->CR     = DMA2D_R2M;
+	DMA2D->OPFCCR = DMA2D_OUTPUT_RGB565;
+	DMA2D->OCOLR  = color;
+	DMA2D->OMAR   = (uint32_t)back_buf;   // 写后台
+	DMA2D->OOR    = 0;
+	DMA2D->NLR    = (480 << 16) | 800;    // 480 列，800 行
+	DMA2D->CR    |= DMA2D_CR_START;
+//	while (DMA2D->CR & DMA2D_CR_START);   // 等填充完成
+}
+
+static void swap_buffers(void)
+{
+	// 确保 DMA2D 已写完后台缓冲
+	while (DMA2D->CR & DMA2D_CR_START);
+
+	// 把新地址写入 LTDC 影子寄存器（不立即生效）
+	HAL_LTDC_SetAddress_NoReload(&hltdc, (uint32_t)back_buf, 0);
+
+	// 在下一个垂直消隐期重载，安全切换
+	HAL_LTDC_Reload(&hltdc, LTDC_RELOAD_VERTICAL_BLANKING);
+
+	// 交换前后台指针
+	uint16_t *tmp = back_buf;
+	back_buf = front_buf;
+	front_buf = tmp;
+}
 /* USER CODE END 0 */
 
 /**
@@ -103,9 +140,13 @@ int main(void)
   MX_GPIO_Init();
   MX_FMC_Init();
   MX_LTDC_Init();
+  MX_DMA2D_Init();
   /* USER CODE BEGIN 2 */
 	// 段收集自动初始化
 	auto_initcalls();
+	
+	// 开启背光
+	HAL_GPIO_WritePin(lcd_backlight_GPIO_Port, lcd_backlight_Pin, GPIO_PIN_SET);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -115,14 +156,25 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		uint32_t tick = HAL_GetTick();
+//		uint32_t tick = HAL_GetTick();
+//		
+//		// led状态机
+//		LED_FSM_Run(led_green_fsm,	tick);
+//		LED_FSM_Run(led_red_fsm,		tick);
+//		
+//		// key状态机
+//		app_key_fsm_run(tick);
+//		
+//		static uint16_t color = 0;
 		
-		// led状态机
-		LED_FSM_Run(led_green_fsm,	tick);
-		LED_FSM_Run(led_red_fsm,		tick);
+		dma2d_fill(0xF800);
+		swap_buffers();
+
+//		dma2d_fill(0x07E0);
+//		swap_buffers();
 		
-		// key状态机
-		app_key_fsm_run(tick);
+		dma2d_fill(0x001F);
+		swap_buffers();
   }
   /* USER CODE END 3 */
 }

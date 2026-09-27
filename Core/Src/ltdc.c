@@ -21,36 +21,7 @@
 #include "ltdc.h"
 
 /* USER CODE BEGIN 0 */
-uint16_t testsram[480 * 800 * 2] __attribute__((at(0x60000000)));
 
-void draw_rainbow(uint32_t tick)
-{
-    for (int y = 0; y < 800; y++) {
-        int hue = (y + tick) % 1536;
-
-        uint8_t r, g, b;
-        if (hue < 256) {
-            r = 255; g = hue; b = 0;
-        } else if (hue < 512) {
-            r = 255 - (hue - 256); g = 255; b = 0;
-        } else if (hue < 768) {
-            r = 0; g = 255; b = hue - 512;
-        } else if (hue < 1024) {
-            r = 0; g = 255 - (hue - 768); b = 255;
-        } else if (hue < 1280) {
-            r = hue - 1024; g = 0; b = 255;
-        } else {
-            r = 255; g = 0; b = 255 - (hue - 1280);
-        }
-
-        // 转成 RGB565
-        uint16_t color = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
-
-        for (int x = 0; x < 480; x++) {
-            testsram[y * 480 + x] = color;
-        }
-    }
-}
 /* USER CODE END 0 */
 
 LTDC_HandleTypeDef hltdc;
@@ -66,8 +37,7 @@ void MX_LTDC_Init(void)
   LTDC_LayerCfgTypeDef pLayerCfg = {0};
 
   /* USER CODE BEGIN LTDC_Init 1 */
-	// 开启背光
-	HAL_GPIO_WritePin(lcd_backlight_GPIO_Port, lcd_backlight_Pin, GPIO_PIN_SET);
+	
   /* USER CODE END LTDC_Init 1 */
   hltdc.Instance = LTDC;
   hltdc.Init.HSPolarity = LTDC_HSPOLARITY_AL;
@@ -109,14 +79,6 @@ void MX_LTDC_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN LTDC_Init 2 */
-	while(1)
-	{
-		static uint32_t tick = 0;
-		tick++;
-		draw_rainbow(tick);
-//		HAL_Delay(10);
-	}
-	
 	
   /* USER CODE END LTDC_Init 2 */
 
