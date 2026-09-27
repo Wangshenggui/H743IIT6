@@ -67,6 +67,8 @@ void Error_Handler(void);
 #define led_green_GPIO_Port GPIOB
 #define led_red_Pin GPIO_PIN_1
 #define led_red_GPIO_Port GPIOB
+#define lcd_backlight_Pin GPIO_PIN_5
+#define lcd_backlight_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

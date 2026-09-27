@@ -44,6 +44,7 @@ void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOI_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -55,6 +56,9 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, led_green_Pin|led_red_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(lcd_backlight_GPIO_Port, lcd_backlight_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : key_up_Pin */
   GPIO_InitStruct.Pin = key_up_Pin;
@@ -68,8 +72,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : led_green_Pin led_red_Pin */
-  GPIO_InitStruct.Pin = led_green_Pin|led_red_Pin;
+  /*Configure GPIO pins : led_green_Pin led_red_Pin lcd_backlight_Pin */
+  GPIO_InitStruct.Pin = led_green_Pin|led_red_Pin|lcd_backlight_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;

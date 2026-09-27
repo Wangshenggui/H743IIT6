@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "ltdc.h"
 #include "gpio.h"
 #include "fmc.h"
 
@@ -56,39 +57,7 @@ static void MPU_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-// 外部SDRAM数组
-uint8_t testsram[32 * 1024 * 1024] __attribute__((at(0x60000000)));
 
-#define MAX_SIZE     (32 * 1024 * 1024)   // 假设最大 32MB
-#define STEP         (1 * 1024 * 1024)    // 每 1MB 测一次
-uint32_t sdram_detect_size(void)
-{
-	volatile uint32_t *p;
-	uint32_t size = 0;
-
-	// 第一步：在每个 1MB 边界写入自己的地址
-	for (uint32_t offset = 0; offset < MAX_SIZE; offset += STEP) {
-			p = (volatile uint32_t *)(SDRAM_BASE_ADDR + offset);
-			*p = SDRAM_BASE_ADDR + offset;   // 写入该地址本身
-	}
-
-	// 第二步：读回，找到第一个“回绕”的地址
-	for (uint32_t offset = 0; offset < MAX_SIZE; offset += STEP)
-	{
-		p = (volatile uint32_t *)(SDRAM_BASE_ADDR + offset);
-		uint32_t readback = *p;
-		uint32_t expected = SDRAM_BASE_ADDR + offset;
-
-		if (readback != expected) {
-				// 读回的不是自己，说明这个地址已经超出真实容量
-				size = offset;
-				break;
-		}
-	}
-
-	if (size == 0) size = MAX_SIZE;
-	return size;
-}
 /* USER CODE END 0 */
 
 /**
@@ -133,12 +102,10 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_FMC_Init();
+  MX_LTDC_Init();
   /* USER CODE BEGIN 2 */
 	// 段收集自动初始化
 	auto_initcalls();
-	
-	static uint32_t sdram_size = 0;
-	sdram_size = sdram_detect_size();
   /* USER CODE END 2 */
 
   /* Infinite loop */
